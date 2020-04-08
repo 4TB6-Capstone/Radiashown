@@ -67,28 +67,34 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Simulation2.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Simulation2.Designer.cs">
+      <DependentUpon>Simulation2.cs</DependentUpon>
+    </Compile>
     <Compile Include="Radiation Map.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Radiation Map.Designer.cs">
       <DependentUpon>Radiation Map.cs</DependentUpon>
     </Compile>
-    <Compile Include="Setup Page.cs">
+    <Compile Include="radSimulation.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Setup Page.Designer.cs">
-      <DependentUpon>Setup Page.cs</DependentUpon>
+    <Compile Include="radSimulation.Designer.cs">
+      <DependentUpon>radSimulation.cs</DependentUpon>
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="Radiation Map.resx">
       <DependentUpon>Radiation Map.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Setup Page.aa-DJ.resx">
-      <DependentUpon>Setup Page.cs</DependentUpon>
+    <EmbeddedResource Include="radSimulation.aa-DJ.resx">
+      <DependentUpon>radSimulation.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Setup Page.resx">
-      <DependentUpon>Setup Page.cs</DependentUpon>
+    <EmbeddedResource Include="radSimulation.resx">
+      <DependentUpon>radSimulation.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
@@ -99,6 +105,9 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
+    <EmbeddedResource Include="Simulation2.resx">
+      <DependentUpon>Simulation2.cs</DependentUpon>
+    </EmbeddedResource>
     <None Include=".editorconfig" />
     <None Include="Lib\ensurepip\_bundled\pip-8.1.1-py2.py3-none-any.whl" />
     <None Include="Lib\ensurepip\_bundled\setuptools-20.10.1-py2.py3-none-any.whl" />

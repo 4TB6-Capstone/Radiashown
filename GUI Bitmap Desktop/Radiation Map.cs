@@ -14,32 +14,81 @@ using System.Runtime.InteropServices;
 using System.Drawing.Imaging;
 using System.Web;
 using System.Drawing.Design;
+using System.Threading;
 
 namespace GUI_Bitmap_Desktop
 {
     public partial class Radiashown : Form
     {
         Bitmap myBitmap;
+        BackgroundWorker workerThread = null;
+        private Thread _backgroundWorkerThread;
+
         public Radiashown()
         {
             InitializeComponent();
+            InstantiateWorkerThread();
+
+            pictureBox2.Image = pictureBox2.InitialImage;
+            pictureBox3.Image = pictureBox3.InitialImage;
         }
-        private Bitmap DrawFilledRectangle(int x, int y)
+        private void InstantiateWorkerThread()
         {
-            Bitmap myBitmap = new Bitmap(x, y);
+            workerThread = new BackgroundWorker();
+            workerThread.ProgressChanged += WorkerThread_ProgressChanged;
+            workerThread.DoWork += WorkerThread_DoWork;
+            workerThread.RunWorkerCompleted += WorkerThread_RunWorkerCompleted;
+            workerThread.WorkerReportsProgress = true;
+            workerThread.WorkerSupportsCancellation = true;
+        }
+
+        private void WorkerThread_ProgressChanged(object sender, ProgressChangedEventArgs e)
+        {
+            this.Invoke(new Action(() => pictureBox1.Refresh()));
+        }
+
+        private void WorkerThread_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+
+        }
+
+        void WorkerThread_DoWork(object sender, DoWorkEventArgs e)
+        {
+            myBitmap = DrawFilledRectangle(1000, 1000);
+            pictureBox1.Image = myBitmap;
+
+            try
+            {
+
+            }
+            catch (ThreadAbortException)
+            {
+
+                // Do clean up here.
+            }
+        }
+
+        private Bitmap DrawFilledRectangle(int xRoom, int yRoom)
+        {
+            Bitmap myBitmap = new Bitmap(xRoom, yRoom);
             using (Graphics graph = Graphics.FromImage(myBitmap))
             {
-                Rectangle ImageSize = new Rectangle(0, 0, x, y);
+                Rectangle ImageSize = new Rectangle(0, 0, xRoom, yRoom);
                 graph.FillRectangle(Brushes.White, ImageSize);
             }
 
             return myBitmap;
         }
 
-        private void Form1_Load(object sender, EventArgs e)
+        public void SuspendBackgroundWorker()
         {
-            //AllocConsole();
-            //panel1.Controls.Add(pictureBox1);
+            if (_backgroundWorkerThread != null)
+                _backgroundWorkerThread.Suspend();
+        }
+        public void AbortBackgroundWorker()
+        {
+            if (_backgroundWorkerThread != null)
+                _backgroundWorkerThread.Abort();
         }
 
         private void startButton_Click(object sender, EventArgs e)
@@ -50,19 +99,28 @@ namespace GUI_Bitmap_Desktop
             emergencyButton.Visible = true;
             setupButton.Visible = false;
 
-            startScan();
+            if (_backgroundWorkerThread != null)
+            {
+                _backgroundWorkerThread.Resume();
+            }
+            else
+            {
+                workerThread.RunWorkerAsync();
+            }
+            
         }
 
         private void emergencyButton_Click(object sender, EventArgs e)
         {
+            SuspendBackgroundWorker();
             startButton.BackColor = Color.FromName("FireBrick");
             startButton.Text = "Returning Home";
             startButton.Enabled = true;
 
             emergencyButton.Visible = false;
+
         }
 
-        //This is a placeholder
         private void home_Click(object sender, EventArgs e)
         {
             startButton.BackColor = Color.FromName("Buttonshadow");
@@ -73,26 +131,25 @@ namespace GUI_Bitmap_Desktop
             setupButton.Visible = true;
         }
 
-        private void pictureBox1_Click(object sender, EventArgs e)
-        {
-            startScan();
-        }
+
         private void startScan()
         {
             //Graphics gr = CreateGraphics();
             myBitmap = DrawFilledRectangle(1000, 1000);
             pictureBox1.Image = myBitmap;
-            //Bitmap robotIcon = new Bitmap("C:/Users/Marilyn/Desktop/Engineering 5/4TB6/Icon/moon-rover50.png");
-            //pictureBox2.Image = robotIcon;
-            pictureBox2.Image = pictureBox2.InitialImage;
-            //Bitmap radIcon = new Bitmap("C:/Users/Marilyn/Desktop/Engineering 5/4TB6/Icon/radioactive-48.png");
-            //pictureBox3.Image = radIcon;
-            pictureBox3.Image = pictureBox3.InitialImage;
-            //myBitmap.SetResolution(500, 500);
-            //pictureBox1.SizeMode = PictureBoxSizeMode.AutoSize;
 
-            simulationPerimeter();
+            /*ReadData();
+            initial = bufferToJpeg();
+            pictureBox1.Image = initial;
+            var graphics = pictureBox1.CreateGraphics();
+            while (true)
+            {
+                int pos = ReadData();
+                Bitmap block = bufferToJpeg();
+                graphics.DrawImage(block, BlockX(), BlockY());
+            }*/
             
+
         }
 
         private void DrawRadInfo(int xPos, int yPos, int radLevel)
@@ -121,84 +178,40 @@ namespace GUI_Bitmap_Desktop
             }
 
         }
-
-        private void simulationSweep()
+        private void drawPixel(int xPos, int yPos)
         {
 
-            for (int Xcount = 50; Xcount < 950; Xcount = Xcount + 25)
-            {
-                for (int Ycount = 50; Ycount < 950; Ycount = Ycount + 25)
-                {
-                    //robotLocation(Xcount, Ycount);
-                    if (Xcount % 25 == 0 & Ycount % 25 == 0)
-                    {
-                        DrawRadInfo(Xcount, Ycount, RandomNumber(0, 11));
-                    }
-                    pictureBox1.Refresh();
+            myBitmap.SetPixel(xPos, yPos, Color.Black);
+            robotLocation(xPos, yPos);
+            pictureBox1.Refresh();
 
-                }
-            }
         }
-        public int RandomNumber(int min, int max)
+        private void radLocation(int xPos, int yPos)
         {
-            Random random = new Random();
-            return random.Next(min, max);
-        }
-
-        private void simulationPerimeter()
-        {
-            radLocation(500, 500);
-            for (int Ycount = 50; Ycount < 950; Ycount++)
-            {
-                myBitmap.SetPixel(50, Ycount, Color.Black);
-                robotLocation(50, Ycount);
-                pictureBox1.Refresh();
-            }
-
-            for (int Xcount = 50; Xcount < 950; Xcount++)
-            {
-                myBitmap.SetPixel(Xcount, 950, Color.Black);
-                robotLocation(Xcount, 950);
-                pictureBox1.Refresh();
-            }
-
-            for (int Ycount = 950; Ycount > 50; Ycount--)
-            {
-                myBitmap.SetPixel(950, Ycount, Color.Black);
-                robotLocation(950, Ycount);
-                pictureBox1.Refresh();
-            }
-
-            for (int Xcount = 950; Xcount > 50; Xcount--)
-            {
-                myBitmap.SetPixel(Xcount, 50, Color.Black);
-                robotLocation(Xcount, 50);
-                pictureBox1.Refresh();
-            }
-            simulationSweep();
-        }
-
-        private void radLocation(int x, int y)
-        {
-            pictureBox3.Location = new Point(x, y);
+            pictureBox3.Visible = true;
+            pictureBox3.Location = new Point(xPos, yPos);
             pictureBox3.Refresh();
         }
-        private void robotLocation(int x, int y)
+        private void robotLocation(int xPos, int yPos)
         {
-            pictureBox2.Location = new Point(x, y);
+            pictureBox2.Visible = true;
+            pictureBox2.Location = new Point(xPos, yPos);
             pictureBox2.Refresh();
         }
-        private void setupButton_Click(object sender, EventArgs e)
+        private void simButton_Click(object sender, EventArgs e)
         {
-            //this.Hide();
-            radSetup fsetup = new radSetup();
-            fsetup.ShowDialog();
+            this.Hide();
+            Simulation2 fsim2 = new Simulation2();
+            fsim2.ShowDialog();
             //this.Close();
         }
 
-        private void textBox1_TextChanged(object sender, EventArgs e)
+    }
+}
+
+        /*private void textBox1_TextChanged(object sender, EventArgs e)
         {
-            /*textBox1.Text = "test";
+            textBox1.Text = "test";
             // 1) Create engine
             var engine = Python.CreateEngine();
 
@@ -225,84 +238,6 @@ namespace GUI_Bitmap_Desktop
 
 
             // Display the pixel format in Label1.
-            textBox1.Text = str(results.ToArray());*/
-        }
-    }
-}
-/*
-        private void MainScreenThread()
-        {
-            ReadData();//reading data from socket.
-            initial = bufferToJpeg();//first intial full screen image.
-            pictureBox1.Paint += pictureBox1_Paint;//activating the paint event.
-            while (true)
-            {
-                int pos = ReadData();
-                x = BlockX();//where to draw :X
-                y = BlockY();//where to draw :Y
-                Bitmap block = bufferToJpeg();//constantly reciving blocks.
-                Draw(block, new Point(x, y));//applying the changes-drawing the block on the big initial image.using native memcpy.
-
-                this.Invoke(new Action(() =>
-                {
-                    pictureBox1.Refresh();//updaing the picturebox for seeing results.
-                                          // this.Text = ((pos / 1000).ToString() + "KB");
-                }));
-            }
-        }
-
-        private void pictureBox1_Paint(object sender, PaintEventArgs e)
-        {
-            lock (initial)
-            {
-                e.Graphics.DrawImage(initial, pictureBox1.ClientRectangle); //draws at picturebox's bounds
-            }
-        }
-
-        private unsafe void Draw(Bitmap bmp2, Point point)
-        {
-            lock (initial)
-            {
-                BitmapData bmData = initial.LockBits(new Rectangle(0, 0, initial.Width, initial.Height), System.Drawing.Imaging.ImageLockMode.WriteOnly, initial.PixelFormat);
-                BitmapData bmData2 = bmp2.LockBits(new Rectangle(0, 0, bmp2.Width, bmp2.Height), System.Drawing.Imaging.ImageLockMode.ReadOnly, bmp2.PixelFormat);
-                IntPtr scan0 = bmData.Scan0;
-                IntPtr scan02 = bmData2.Scan0;
-                int stride = bmData.Stride;
-                int stride2 = bmData2.Stride;
-                int Width = bmp2.Width;
-                int Height = bmp2.Height;
-                int X = point.X;
-                int Y = point.Y;
-
-                scan0 = IntPtr.Add(scan0, stride * Y + X * 3);//setting the pointer to the requested line
-                for (int y = 0; y < Height; y++)
-                {
-                    memcpy(scan0, scan02, (UIntPtr)(Width * 3));//copy one line
-
-                    scan02 = IntPtr.Add(scan02, stride2);//advance pointers
-                    scan0 = IntPtr.Add(scan0, stride);//advance pointers//
-                }
-
-
-                initial.UnlockBits(bmData);
-                bmp2.UnlockBits(bmData2);
-            }
+            textBox1.Text = str(results.ToArray());
         }*/
-
-/*if (Xcount > scaleX ^ Ycount > scaleY)
-{                       
-//myBitmap = new Bitmap(myBitmap, new Size(myBitmap.Width / 4, myBitmap.Height / 4));
-//myBitmap.SetResolution(2500, 2500);
-pictureBox1.Image = myBitmap;
-using (Graphics graph = Graphics.FromImage(myBitmap))
-{
-    DrawFilledRectangle(500, 500);
-    var x = (500 - myBitmap.Width) / 2;  
-    var y = (500 - myBitmap.Height) / 2;  
-    graph.DrawImageUnscaled(myBitmap, x, y, myBitmap.Width, myBitmap.Height);
-}
-//Xcount = Xcount / 4;
-//Ycount = Ycount / 4;
-System.Threading.Thread.Sleep(5000);
-}*/
 
